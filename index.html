@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cazanombres</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+  /* Layout: una columna de herramienta. Pestañas de plataforma, controles, botones de acción, rejilla de nombres, lista de disponibles. */
+  :root {
+    color-scheme: light;
+    --bg: #EDF0F4;
+    --surface: #FFFFFF;
+    --ink: #12161C;
+    --muted: #5B6572;
+    --line: #D3D9E1;
+    --accent: #0B5FFF;
+    --accent-ink: #FFFFFF;
+    --ok: #0F7A55;
+    --ok-bg: #E1F4EC;
+    --bad: #B53636;
+    --bad-bg: #FBE7E7;
+    --discord: #5865F2;
+    --tiktok: #FE2C55;
+    --roblox: #E2231A;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #0D1117;
+      --surface: #151B23;
+      --ink: #E7ECF2;
+      --muted: #8C98A6;
+      --line: #252E39;
+      --accent: #5C94FF;
+      --accent-ink: #0B1220;
+      --ok: #4FD6A5;
+      --ok-bg: #12291F;
+      --bad: #FF8585;
+      --bad-bg: #2D1717;
+      --discord: #7C86FF;
+    }
+  }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 20px 16px 32px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app { max-width: 880px; margin-inline: auto; display: flex; flex-direction: column; gap: 16px; }
+  button, select, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.1; letter-spacing: -0.01em; margin: 0; }
+  .sub { margin: 4px 0 0; color: var(--muted); }
+
+  .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tab {
+    position: relative; text-align: left; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px 10px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  }
+  .tab::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--dot); }
+  .tab[data-p="discord"] { --dot: var(--discord); }
+  .tab[data-p="tiktok"] { --dot: var(--tiktok); }
+  .tab[data-p="roblox"] { --dot: var(--roblox); }
+  .tab .t-name { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+  .tab .t-len { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .tab[aria-selected="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+  .panel { display: flex; flex-direction: column; gap: 14px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; color: var(--muted); font-weight: 500; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .field { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+  .field select { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; color: var(--ink); }
+  .field input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  .gen-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+  .gen {
+    width: 100%; min-height: 54px; border: 2px solid var(--accent); border-radius: 12px; background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-display); font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0 8px;
+  }
+  .gen:active { transform: translateY(1px); }
+  .gen.alt { background: transparent; color: var(--accent); }
+  .gen.alt.on { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+
+  .stats { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--ink); font-weight: 700; }
+  .note { margin: 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 13px; }
+  .note strong { color: var(--ink); font-weight: 600; }
+
+  .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .tile.is-free { border-color: var(--ok); }
+  .tile .name { font-family: var(--font-mono); font-weight: 700; font-size: 28px; letter-spacing: 0.06em; line-height: 1.1; overflow-wrap: anywhere; }
+  .tile.is-taken .name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .state { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--muted); align-self: flex-start; }
+  .is-free .state { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .is-taken .state { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+  .acts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+  .acts button, .acts a {
+    text-align: center; text-decoration: none; color: var(--ink); background: transparent; border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 6px; font-size: 13px; font-weight: 500;
+  }
+
+  h2 { font-family: var(--font-display); font-size: 18px; margin: 8px 0 0; }
+  .saved { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--ok-bg); border: 1px solid var(--ok); border-radius: 10px; padding: 4px 4px 4px 12px; }
+  .chip span { font-family: var(--font-mono); font-weight: 700; font-size: 17px; letter-spacing: 0.05em; color: var(--ok); }
+  .chip button { border: 0; background: transparent; color: var(--ink); font-size: 12px; padding: 6px 8px; border-radius: 6px; }
+  .empty { color: var(--muted); font-size: 13px; }
+
+  #toast {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px;
+    background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s; max-width: calc(100% - 32px); text-align: center;
+  }
+  #toast.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Cazanombres</h1>
+    <p class="sub">Nombres cortos para Discord, TikTok y Roblox, comprobados al instante.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Plataforma">
+    <button class="tab" role="tab" data-p="discord" id="tab-discord" aria-selected="true"><span class="t-name">Discord</span><span class="t-len">4 letras</span></button>
+    <button class="tab" role="tab" data-p="tiktok" id="tab-tiktok" aria-selected="false"><span class="t-name">TikTok</span><span class="t-len">4 letras</span></button>
+    <button class="tab" role="tab" data-p="roblox" id="tab-roblox" aria-selected="false"><span class="t-name">Roblox</span><span class="t-len">5 letras</span></button>
+  </nav>
+
+  <section class="panel">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Tipo de nombre">
+        <button type="button" id="m-pron" aria-pressed="true">Pronunciables</button>
+        <button type="button" id="m-rand" aria-pressed="false">Aleatorios</button>
+      </div>
+      <label class="field" for="count">Cantidad
+        <select id="count"><option>12</option><option selected>24</option><option>48</option></select>
+      </label>
+      <label class="field" for="nums"><input type="checkbox" id="nums"> Con un número</label>
+    </div>
+
+    <div class="gen-row">
+      <button type="button" class="gen" id="gen">Generar</button>
+      <button type="button" class="gen alt" id="hunt" aria-pressed="false">Buscar sin parar</button>
+    </div>
+
+    <p class="stats" id="stats" hidden></p>
+    <p class="note" id="note"></p>
+
+    <ul class="grid" id="grid"></ul>
+
+    <h2 id="saved-title">Mis disponibles</h2>
+    <ul class="saved" id="saved"></ul>
+  </section>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var hasNative = !!(window.Native && typeof window.Native.check === 'function');
+
+  var PLATFORMS = {
+    discord: { label: 'Discord', len: 4, link: null,
+      hint: 'Discord limita las consultas; si va más lento, es normal.',
+      web: 'Discord no ofrece una consulta pública. Pruébalo en Ajustes > Mi cuenta > Editar nombre de usuario.' },
+    tiktok: { label: 'TikTok', len: 4, link: function (n) { return 'https://www.tiktok.com/@' + n; },
+      hint: 'En TikTok el resultado es una estimación; confirma con «Ver».',
+      web: '«Ver» abre tiktok.com/@nombre. Si indica que no se encontró la cuenta, el nombre probablemente esté libre.' },
+    roblox: { label: 'Roblox', len: 5, link: function (n) { return 'https://www.roblox.com/user.aspx?username=' + n; },
+      hint: 'En Roblox el resultado es el más fiable.',
+      web: '«Ver» abre el perfil de ese usuario. Si da página no encontrada, el nombre suele estar libre.' }
+  };
+
+  var CONS = 'bcdfghjklmnprstvwxyz', VOC = 'aeiou';
+  var GRUPOS = ['bl','br','cl','cr','dr','fl','fr','gl','gr','pl','pr','sk','sl','sn','sp','st','tr'];
+  var FINALES = ['nd','nt','st','rk','lk','mp','nk','rt','sk','ld'];
+  var PLANTILLAS = {
+    4: ['CVCV','CVCV','CVCV','VCVC','KVC','CVE','CVVC'],
+    5: ['CVCVC','CVCVC','KVCV','CVKV','VCVCV','KVE']
+  };
+  var PROHIBIDAS = ['fuck','shit','cunt','puta','puto','pene','dick','cock','rape','nazi','fagg','nigg','kike','coon','slut','whor','porn','pedo','anal','tits','cum','sex','kkk','fag'];
+
+  var KEY = 'cazanombres:v1';
+  var store = { discord: {}, tiktok: {}, roblox: {} };
+  try { var raw = localStorage.getItem(KEY); if (raw) { var p0 = JSON.parse(raw); for (var k in store) if (p0 && p0[k]) store[k] = p0[k]; } } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  var current = 'discord', mode = 'pron', batch = [];
+  var tmp = {}, waits = {}, seen = { discord: {}, tiktok: {}, roblox: {} };
+  var stats = { checked: 0, free: 0, taken: 0 };
+  var hunting = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var grid = $('grid'), savedEl = $('saved'), savedTitle = $('saved-title'), noteEl = $('note'),
+      toastEl = $('toast'), statsEl = $('stats'), huntBtn = $('hunt');
+
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function pron(len) {
+    return pick(PLANTILLAS[len]).split('').map(function (c) {
+      return c === 'C' ? pick(CONS) : c === 'V' ? pick(VOC) : c === 'K' ? pick(GRUPOS) : pick(FINALES);
+    }).join('');
+  }
+  function rand(len) { var s = ''; for (var i = 0; i < len; i++) s += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; return s; }
+  function withDigit(n) { var i = 1 + Math.floor(Math.random() * (n.length - 1)); return n.slice(0, i) + (2 + Math.floor(Math.random() * 8)) + n.slice(i + 1); }
+  function blocked(n) { return PROHIBIDAS.some(function (w) { return n.indexOf(w) !== -1; }); }
+
+  function makeBatch(retry) {
+    var len = PLATFORMS[current].len, count = parseInt($('count').value, 10), nums = $('nums').checked;
+    var out = [], guard = 0, sn = seen[current];
+    while (out.length < count && guard++ < count * 60) {
+      var n = mode === 'pron' ? pron(len) : rand(len);
+      if (nums) n = withDigit(n);
+      if (sn[n] || blocked(n) || store[current][n]) continue;
+      sn[n] = 1; out.push(n);
+    }
+    if (!out.length && !retry) { seen[current] = {}; return makeBatch(true); }
+    return out;
+  }
+
+  var LABEL = { '': hasNative ? 'Sin comprobar' : 'Sin verificar', free: 'Disponible', taken: 'Tomado',
+    checking: 'Comprobando…', invalid: 'No válido', noresp: 'Sin respuesta' };
+  function stateOf(n) { return store[current][n] || tmp[current + ':' + n] || ''; }
+
+  function renderTiles() {
+    var p = PLATFORMS[current];
+    grid.innerHTML = batch.map(function (n) {
+      var s = stateOf(n);
+      var second = p.link ? '<a href="' + p.link(n) + '" target="_blank" rel="noopener noreferrer">Ver</a>' : '';
+      return '<li class="tile ' + (s ? 'is-' + s : '') + '"><span class="name">' + n + '</span>' +
+        '<button type="button" class="state" data-act="state" data-name="' + n + '" aria-label="' + n + ': ' + LABEL[s] + '. Toca para cambiar el estado">' + LABEL[s] + '</button>' +
+        '<div class="acts"><button type="button" data-act="copy" data-name="' + n + '">Copiar</button>' + second + '</div></li>';
+    }).join('');
+  }
+
+  function renderSaved() {
+    var free = Object.keys(store[current]).filter(function (k) { return store[current][k] === 'free'; });
+    savedTitle.textContent = 'Mis disponibles en ' + PLATFORMS[current].label + ' (' + free.length + ')';
+    savedEl.innerHTML = free.length ? free.map(function (n) {
+      return '<li class="chip"><span>' + n + '</span><button type="button" data-act="copy" data-name="' + n + '">Copiar</button>' +
+        '<button type="button" data-act="clear" data-name="' + n + '" aria-label="Quitar ' + n + '">Quitar</button></li>';
+    }).join('') : '<li class="empty">Los nombres disponibles aparecerán aquí.</li>';
+  }
+
+  function renderStats() {
+    if (!hasNative) return;
+    statsEl.innerHTML = 'Comprobados <b>' + stats.checked + '</b> · Disponibles <b>' + stats.free + '</b> · Tomados <b>' + stats.taken + '</b>';
+  }
+
+  function checkName(p, n) {
+    return new Promise(function (resolve) {
+      var key = p + ':' + n;
+      tmp[key] = 'checking'; waits[key] = resolve;
+      try { window.Native.check(p, n); } catch (e) { delete waits[key]; tmp[key] = 'noresp'; resolve('error'); }
+    });
+  }
+  function checkBatch(p, names) {
+    return Promise.all(names.map(function (n) { return checkName(p, n); }));
+  }
+
+  window.__res = function (p, n, r) {
+    var key = p + ':' + n;
+    if (r === 'disponible') { store[p][n] = 'free'; delete tmp[key]; stats.checked++; stats.free++; }
+    else if (r === 'tomado') { store[p][n] = 'taken'; delete tmp[key]; stats.checked++; stats.taken++; }
+    else if (r === 'no válido') { tmp[key] = 'invalid'; }
+    else { tmp[key] = 'noresp'; }
+    save();
+    var w = waits[key]; if (w) { delete waits[key]; w(r); }
+    if (p === current) { renderTiles(); renderSaved(); }
+    renderStats();
+  };
+
+  function stopHunt() {
+    var pending = Object.keys(waits);
+    var was = hunting;
+    hunting = false;
+    huntBtn.textContent = 'Buscar sin parar'; huntBtn.classList.remove('on'); huntBtn.setAttribute('aria-pressed', 'false');
+    if (was || pending.length) {
+      if (hasNative) { try { window.Native.cancel(); } catch (e) {} }
+      pending.forEach(function (k) { var w = waits[k]; delete waits[k]; delete tmp[k]; w('cancelado'); });
+      renderTiles();
+    }
+  }
+
+  function generate() {
+    stopHunt();
+    batch = makeBatch(); renderTiles(); renderSaved();
+    if (hasNative) checkBatch(current, batch.slice());
+  }
+
+  function hunt() {
+    if (hunting) { stopHunt(); return; }
+    hunting = true;
+    huntBtn.textContent = 'Detener'; huntBtn.classList.add('on'); huntBtn.setAttribute('aria-pressed', 'true');
+    var p = current, silent = 0;
+    (function loop() {
+      if (!hunting || p !== current) return;
+      batch = makeBatch();
+      if (!batch.length) { stopHunt(); return; }
+      renderTiles(); renderSaved();
+      var before = stats.checked;
+      checkBatch(p, batch.slice()).then(function () {
+        if (!hunting) return;
+        silent = stats.checked === before ? silent + 1 : 0;
+        if (silent >= 3) { stopHunt(); toast('Sin respuesta de la plataforma. Revisa tu conexión o espera un momento.'); return; }
+        setTimeout(loop, 0);
+      });
+    })();
+  }
+
+  function setTab(p) {
+    stopHunt();
+    current = p;
+    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.p === p ? 'true' : 'false'); });
+    noteEl.innerHTML = hasNative
+      ? '<strong>Las comprobaciones salen de tu celular.</strong> «Disponible» no garantiza que te dejen registrar el nombre. ' + PLATFORMS[p].hint
+      : '<strong>Esta página no consulta a las plataformas.</strong> Marca cada nombre tú mismo. ' + PLATFORMS[p].web;
+    generate();
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.classList.add('on');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { toastEl.classList.remove('on'); }, 1800);
+  }
+  function copy(text) {
+    if (hasNative && typeof window.Native.copy === 'function') { window.Native.copy(text); toast('Copiado: ' + text); return; }
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('Copiado: ' + text);
+      } catch (e) { toast('Selecciona y copia: ' + text); }
+    }
+    try { navigator.clipboard.writeText(text).then(function () { toast('Copiado: ' + text); }, fallback); } catch (e) { fallback(); }
+  }
+
+  document.querySelector('.app').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var n = b.dataset.name, act = b.dataset.act;
+    if (act === 'copy') { copy(n); return; }
+    var cur = store[current][n] || '';
+    var next = act === 'clear' ? '' : cur === '' ? 'free' : cur === 'free' ? 'taken' : '';
+    delete tmp[current + ':' + n];
+    if (next) store[current][n] = next; else delete store[current][n];
+    save(); renderTiles(); renderSaved();
+    var again = grid.querySelector('[data-act="state"][data-name="' + n + '"]');
+    if (again && act === 'state') again.focus();
+  });
+
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () { if (t.dataset.p !== current) setTab(t.dataset.p); });
+  });
+
+  function setMode(m) {
+    mode = m; $('m-pron').setAttribute('aria-pressed', m === 'pron'); $('m-rand').setAttribute('aria-pressed', m === 'rand'); generate();
+  }
+  $('m-pron').addEventListener('click', function () { setMode('pron'); });
+  $('m-rand').addEventListener('click', function () { setMode('rand'); });
+  $('count').addEventListener('change', generate);
+  $('nums').addEventListener('change', generate);
+  $('gen').addEventListener('click', generate);
+  huntBtn.addEventListener('click', hunt);
+
+  huntBtn.hidden = !hasNative;
+  statsEl.hidden = !hasNative;
+  renderStats();
+  setTab('discord');
+})();
+</script>
+</body>
+</html>
